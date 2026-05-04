@@ -1,0 +1,22 @@
+{
+  "name": "bluedocs-prospecting",
+  "version": "1.0.0",
+  "description": "Sistema multi-agêntico de prospecção BlueDocs — BlueMetrics",
+  "scripts": {
+    "agent:1": "ts-node scripts/run-agent.ts 1",
+    "agent:2": "ts-node scripts/run-agent.ts 2",
+    "agent:3": "ts-node scripts/run-agent.ts 3",
+    "run:all": "ts-node scripts/run-all.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "@supabase/supabase-js": "^2.49.0",
+    "axios": "^1.7.0",
+    "dotenv": "^16.4.0"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.0",
+    "typescript": "^5.4.0",
+    "@types/node": "^20.0.0"
+  }
+}

@@ -1,0 +1,5 @@
+Oi {nome_contato}, tudo bem?
+
+Vi que o {nome_empresa} atua no setor de energia em {estado}.
+
+Automatizamos análise de contratos regulatórios e documentos ANEEL com IA, reduzindo risco e tempo de análise em 70%. Posso compartilhar um caso prático?

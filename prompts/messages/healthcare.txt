@@ -1,0 +1,5 @@
+Oi {nome_contato}, tudo bem?
+
+Vi que o {nome_empresa} é referência em saúde no {estado}.
+
+Empresas do setor estão reduzindo em 80% o tempo de análise de contratos de convênio e auditorias usando IA. Consigo te mostrar em 15 minutos como funciona?

@@ -1,0 +1,17 @@
+Empresa: {nome}
+Setor: {setor}
+Faturamento estimado: {faturamento_usd} USD
+UF: {uf}
+Funcionários: {funcionarios}
+Tecnologias identificadas: {tecnologias}
+Vagas abertas relacionadas: {vagas}
+
+Com base nesses dados, identifique o fit desta empresa com o BlueDocs.
+
+Responda APENAS com JSON válido, sem texto adicional, sem markdown, sem backticks:
+{
+  "vertical_bluedocs": "healthcare|financial|energy|construction|manufacturing|logistics|outros",
+  "caso_uso_bluedocs": "contratos|editais|garantias|compliance|due_diligence|nao_identificado",
+  "dor_primaria": "2-3 frases descrevendo a dor documental específica desta empresa e como o BlueDocs resolve com impacto concreto",
+  "justificativa_score": "1 frase explicando o fit com BlueDocs"
+}

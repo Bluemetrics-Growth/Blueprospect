@@ -1,0 +1,5 @@
+Oi {nome_contato}, tudo bem?
+
+A BlueMetrics ajuda construtoras a analisar 10x mais editais e RFPs com o mesmo time usando IA.
+
+Vi que o {nome_empresa} atua em {estado} — seria útil 15 minutos para te mostrar como funciona?

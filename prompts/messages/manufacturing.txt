@@ -1,0 +1,5 @@
+Oi {nome_contato}, tudo bem?
+
+Vi que o {nome_empresa} é uma indústria relevante em {estado}.
+
+Estamos automatizando análise de contratos de fornecedor e garantias com IA para indústrias — reduz erro humano e acelera decisões. Posso te mostrar em 15 minutos?

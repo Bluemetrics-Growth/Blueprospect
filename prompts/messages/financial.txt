@@ -1,0 +1,7 @@
+Oi {nome_contato}, tudo bem?
+
+Trabalho com empresas do setor financeiro automatizando análise de garantias e compliance com IA.
+
+{dor_primaria}
+
+Faz sentido conversarmos 15 minutos sobre isso?
