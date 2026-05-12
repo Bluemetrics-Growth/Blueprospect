@@ -49,12 +49,27 @@ export interface CompanyPainInput {
   uf: string
   funcionarios?: number | string
   tecnologias?: string[]
-  vagas?: string[]
+  descricao?: string
+  headcount_dept?: Record<string, number>
+  eventos_funding?: Array<{ date?: string; type?: string; amount?: string }>
+  vagas_detalhadas?: Array<{ title: string; department?: string }>
 }
 
 export async function mapPain(company: CompanyPainInput): Promise<PainMapResult> {
   const templatePath = path.join(__dirname, '../prompts/pain-mapping.txt')
   const template = fs.readFileSync(templatePath, 'utf-8')
+
+  const headcountStr = company.headcount_dept && Object.keys(company.headcount_dept).length
+    ? Object.entries(company.headcount_dept).map(([d, n]) => `${d}: ${n}`).join(', ')
+    : 'não disponível'
+
+  const fundingStr = company.eventos_funding?.length
+    ? company.eventos_funding.map(e => [e.type, e.date, e.amount].filter(Boolean).join(' ')).join(' | ')
+    : 'nenhum identificado'
+
+  const vagasStr = company.vagas_detalhadas?.length
+    ? company.vagas_detalhadas.map(v => v.department ? `${v.title} (${v.department})` : v.title).join(', ')
+    : 'não identificadas'
 
   const prompt = template
     .replace('{nome}', company.nome)
@@ -62,8 +77,11 @@ export async function mapPain(company: CompanyPainInput): Promise<PainMapResult>
     .replace('{faturamento_usd}', String(company.faturamento_usd))
     .replace('{uf}', company.uf || 'não informado')
     .replace('{funcionarios}', String(company.funcionarios || 'não informado'))
+    .replace('{descricao}', company.descricao || 'não disponível')
+    .replace('{headcount_dept}', headcountStr)
     .replace('{tecnologias}', (company.tecnologias || []).join(', ') || 'não identificadas')
-    .replace('{vagas}', (company.vagas || []).join(', ') || 'não identificadas')
+    .replace('{vagas_detalhadas}', vagasStr)
+    .replace('{eventos_funding}', fundingStr)
 
   const attempt = async (): Promise<PainMapResult> => {
     const response = await client.messages.create({

@@ -3,8 +3,11 @@ Setor: {setor}
 Faturamento estimado: {faturamento_usd} USD
 UF: {uf}
 Funcionários: {funcionarios}
+Descrição: {descricao}
+Headcount por departamento: {headcount_dept}
 Tecnologias identificadas: {tecnologias}
-Vagas abertas relacionadas: {vagas}
+Vagas abertas: {vagas_detalhadas}
+Eventos de funding/M&A: {eventos_funding}
 
 Com base nesses dados, identifique o fit desta empresa com o BlueDocs.
 

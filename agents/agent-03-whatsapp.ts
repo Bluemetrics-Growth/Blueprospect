@@ -5,6 +5,25 @@ import { generateMessage } from '../lib/claude'
 import { sendMessage } from '../lib/evolution'
 import { supabase } from '../lib/supabase'
 import type { Lead, Company, Message } from '../lib/supabase'
+import { getContactPhone } from '../lib/hubspot-client'
+
+const HS_STAGE_ABORDADO = '1358852621'
+
+async function hsMoveToAbordado(dealId: string): Promise<void> {
+  const token = process.env.HUBSPOT_ACCESS_TOKEN
+  const resp = await fetch(`https://api.hubapi.com/crm/v3/objects/deals/${dealId}`, {
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ properties: { dealstage: HS_STAGE_ABORDADO } }),
+  })
+  if (!resp.ok) {
+    const text = await resp.text()
+    throw new Error(`HubSpot PATCH deal ${dealId}: ${resp.status} ${text}`)
+  }
+}
 
 type LeadWithCompany = Lead & { companies: Company }
 
@@ -39,6 +58,15 @@ export async function runAgent(options: { limit?: number } = {}): Promise<void> 
     }
 
     try {
+      if (!lead.whatsapp && lead.hubspot_contact_id) {
+        const phone = await getContactPhone(lead.hubspot_contact_id)
+        if (phone) {
+          lead.whatsapp = phone
+          await supabase.from('leads').update({ whatsapp: phone }).eq('id', lead.id!)
+          console.log(`  → telefone obtido do HubSpot: ${phone}`)
+        }
+      }
+
       const mensagem = await generateMessage(
         {
           nome_contato: lead.nome_contato,
@@ -80,6 +108,14 @@ export async function runAgent(options: { limit?: number } = {}): Promise<void> 
         if (ok) {
           sent++
           console.log(`✓ ${company.nome} | mensagem enviada via WhatsApp`)
+          if (lead.hubspot_deal_id) {
+            try {
+              await hsMoveToAbordado(lead.hubspot_deal_id)
+              console.log(`  → HubSpot deal movido para "Abordado"`)
+            } catch (hsErr: any) {
+              console.warn(`  ⚠ Falha ao atualizar HubSpot deal: ${hsErr.message}`)
+            }
+          }
         } else {
           console.warn(`⚠ ${company.nome} | falha no envio, registrado como "failed"`)
         }

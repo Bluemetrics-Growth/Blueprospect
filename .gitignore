@@ -1,5 +1,13 @@
 .env
+.env.local
+.env*.local
 node_modules/
 dist/
 *.js
 google-credentials.json
+
+# Next.js
+app/.env*
+app/node_modules/
+app/.next/
+app/out/
