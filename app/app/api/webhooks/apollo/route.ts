@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createClient, SupabaseClient } from '@supabase/supabase-js'
 
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_KEY!
-)
+// Lazy init — evita falha de build quando env vars não estão disponíveis
+let _supabase: SupabaseClient | null = null
+function getSupabase(): SupabaseClient {
+  if (!_supabase) {
+    _supabase = createClient(
+      process.env.SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_KEY!
+    )
+  }
+  return _supabase
+}
 
 interface ApolloPhoneNumber {
   raw_number?: string
@@ -68,6 +75,7 @@ function bestPhone(phones: ApolloPhoneNumber[], fallback?: string): string | nul
 }
 
 async function updateLeadPhone(personId: string, phone: string): Promise<string | null> {
+  const supabase = getSupabase()
   const { data: leads, error } = await supabase
     .from('leads')
     .select('id')
