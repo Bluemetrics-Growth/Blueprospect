@@ -101,7 +101,7 @@ async function updateLeadPhone(
   const { data: leads, error } = await supabase
     .from('leads')
     .select('id, status, hubspot_contact_id')
-    .filter('dados_apollo->>person_id', 'eq', personId)
+    .contains('dados_apollo', { person_id: personId })
 
   if (error) {
     console.error('[Webhook Apollo] Erro ao buscar lead:', error.message)
