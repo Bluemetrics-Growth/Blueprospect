@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
 
-// Lazy init — evita falha de build quando env vars não estão disponíveis
 let _supabase: SupabaseClient | null = null
 function getSupabase(): SupabaseClient {
   if (!_supabase) {
@@ -16,7 +15,6 @@ function getSupabase(): SupabaseClient {
 interface ApolloPhoneNumber {
   raw_number?: string
   sanitized_number?: string
-  // Apollo webhook usa type_cd / status_cd; people/match usa type / status
   type?: string
   type_cd?: string
   status?: string
@@ -24,7 +22,6 @@ interface ApolloPhoneNumber {
   position?: number
 }
 
-// Format A: { person_id, phone_numbers[] } ou { data: { ... } }
 interface ApolloWebhookFormatA {
   event_type?: string
   person_id?: string
@@ -39,7 +36,6 @@ interface ApolloWebhookFormatA {
   }
 }
 
-// Format B: { people: [{ id, phone_numbers[] }] }
 interface ApolloWebhookFormatB {
   status?: string
   people?: Array<{
@@ -57,28 +53,54 @@ type ApolloWebhookPayload = ApolloWebhookFormatA & ApolloWebhookFormatB
 function bestPhone(phones: ApolloPhoneNumber[], fallback?: string): string | null {
   if (!phones.length) return fallback || null
 
-  // Prioridade 1: mobile válido (suporta type_cd e type)
+  // Priority 1: mobile valid
   const mobile = phones.find(
     (p) => (p.type_cd === 'mobile' || p.type === 'mobile') &&
            (p.status_cd === 'valid_number' || p.status === 'valid_number')
   )
   if (mobile?.sanitized_number) return mobile.sanitized_number
 
-  // Prioridade 2: qualquer número válido
+  // Priority 2: any valid
   const valid = phones.find(
     (p) => p.status_cd === 'valid_number' || p.status === 'valid_number'
   )
   if (valid?.sanitized_number) return valid.sanitized_number
 
-  // Prioridade 3: primeiro disponível
+  // Priority 3: first available
   return phones[0]?.sanitized_number || fallback || null
 }
 
-async function updateLeadPhone(personId: string, phone: string): Promise<string | null> {
+async function updateHubSpotContactPhone(contactId: string, phone: string): Promise<void> {
+  const token = process.env.HUBSPOT_ACCESS_TOKEN
+  if (!token) return
+  try {
+    const resp = await fetch(`https://api.hubapi.com/crm/v3/objects/contacts/${contactId}`, {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ properties: { phone } }),
+    })
+    if (resp.ok) {
+      console.log(`[Webhook Apollo] ✓ HubSpot contact ${contactId} atualizado com telefone`)
+    } else {
+      const text = await resp.text()
+      console.warn(`[Webhook Apollo] HubSpot update falhou (${resp.status}): ${text}`)
+    }
+  } catch (err: any) {
+    console.warn(`[Webhook Apollo] Erro ao atualizar HubSpot: ${err.message}`)
+  }
+}
+
+async function updateLeadPhone(
+  personId: string,
+  phone: string
+): Promise<{ leadId: string; hubspotContactId: string | null } | null> {
   const supabase = getSupabase()
   const { data: leads, error } = await supabase
     .from('leads')
-    .select('id')
+    .select('id, hubspot_contact_id')
     .eq('status', 'needs_phone_reveal')
     .filter('dados_apollo->>person_id', 'eq', personId)
 
@@ -104,7 +126,7 @@ async function updateLeadPhone(personId: string, phone: string): Promise<string 
   }
 
   console.log(`[Webhook Apollo] ✓ lead ${lead.id} | person_id: ${personId} | whatsapp: ${phone}`)
-  return lead.id
+  return { leadId: lead.id, hubspotContactId: lead.hubspot_contact_id ?? null }
 }
 
 export async function POST(request: NextRequest) {
@@ -123,14 +145,19 @@ export async function POST(request: NextRequest) {
           person.sanitized_phone || person.sanitized_number
         )
         if (personId && phone) {
-          const leadId = await updateLeadPhone(personId, phone)
-          if (leadId) updated.push(leadId)
+          const result = await updateLeadPhone(personId, phone)
+          if (result) {
+            updated.push(result.leadId)
+            if (result.hubspotContactId) {
+              await updateHubSpotContactPhone(result.hubspotContactId, phone)
+            }
+          }
         }
       }
       return NextResponse.json({ ok: true, updated })
     }
 
-    // Format A: person_id direto ou dentro de data
+    // Format A: person_id direct or inside data
     const personId =
       payload.person_id || payload.id ||
       payload.data?.person_id || payload.data?.id || null
@@ -150,12 +177,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: true, skipped: 'no_phone' })
     }
 
-    const leadId = await updateLeadPhone(personId, phone)
-    return NextResponse.json({ ok: true, updated: leadId ? [leadId] : [] })
+    const result = await updateLeadPhone(personId, phone)
+    if (result) {
+      updated.push(result.leadId)
+      if (result.hubspotContactId) {
+        await updateHubSpotContactPhone(result.hubspotContactId, phone)
+      }
+    }
+
+    return NextResponse.json({ ok: true, updated })
 
   } catch (err: any) {
     console.error('[Webhook Apollo] Erro inesperado:', err?.message || err)
-    // Sempre 200 — Apollo não deve retentar
     return NextResponse.json({ ok: true, error: 'internal_error' })
   }
 }

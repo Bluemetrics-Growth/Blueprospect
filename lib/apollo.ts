@@ -29,7 +29,7 @@ async function revealContact(person: any): Promise<any> {
 
   try {
     // Step 1: match by id/linkedin to get email + try phone
-    const body: Record<string, any> = { reveal_personal_emails: true, reveal_phone_numbers: true }
+    const body: Record<string, any> = { reveal_personal_emails: true, reveal_phone_number: true, run_waterfall_phone: true }
     if (webhookUrl) body.webhook_url = webhookUrl
 
     if (person.linkedin_url)  body.linkedin_url     = person.linkedin_url
@@ -51,7 +51,7 @@ async function revealContact(person: any): Promise<any> {
     // Step 2: if we have an email but still no phone, reveal again by email
     if (email && !phoneNumbers) {
       try {
-        const body2: Record<string, any> = { email, reveal_phone_numbers: true }
+        const body2: Record<string, any> = { email, reveal_phone_number: true, run_waterfall_phone: true }
         if (webhookUrl) body2.webhook_url = webhookUrl
         const r2 = await axios.post(
           'https://api.apollo.io/v1/people/match',
