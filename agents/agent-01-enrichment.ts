@@ -3,7 +3,7 @@ import * as path from 'path'
 import * as dotenv from 'dotenv'
 dotenv.config()
 
-import { enrichCompany, findContacts, getJobPostings, searchContactByEmail, requestPhoneReveal } from '../lib/apollo'
+import { enrichCompany, findContacts, getJobPostings, searchContactByEmail } from '../lib/apollo'
 import { mapPain } from '../lib/claude'
 import { supabase } from '../lib/supabase'
 import type { Company, Lead } from '../lib/supabase'
@@ -182,10 +182,11 @@ export async function runAgent(options: { limit?: number; file?: string; leads?:
         }
       }
 
-      if (!whatsappNumber && primaryContact?.id) {
-        const revealed = await requestPhoneReveal(primaryContact.id)
-        if (revealed) {
-          console.log(`   ⏳ reveal solicitado — telefone chegará via webhook`)
+      if (!whatsappNumber) {
+        if (process.env.APOLLO_WEBHOOK_URL) {
+          console.log(`   ⏳ telefone pendente — reveal solicitado ao Apollo via webhook`)
+        } else {
+          console.log(`   ⚠ telefone pendente — configure APOLLO_WEBHOOK_URL para reveal assíncrono`)
         }
       }
 
@@ -240,7 +241,8 @@ export async function runAgent(options: { limit?: number; file?: string; leads?:
       }
 
       enriched++
-      console.log(`✓ ${raw.nome} | vertical: ${painResult.vertical_bluedocs} | icp_score: ${raw.icp_score || 'A'} | status: ${leadStatus}`)
+      const phoneLog = whatsappNumber ? `telefone: ${whatsappNumber}` : `telefone pendente — reveal solicitado`
+      console.log(`✓ ${raw.nome} | ${painResult.vertical_bluedocs} | ${phoneLog}`)
       console.log(`   contatos: ${allContacts.length} | vagas: ${jobPostings.length} | funding: ${fundingEvents.length} | headcount_depts: ${Object.keys(headcountByDept).length}`)
       if (jobPostings.length > 0) console.log(`   vagas: ${jobPostings.map(j => j.title).join(', ')}`)
       if (fundingEvents.length > 0) console.log(`   funding: ${fundingEvents.map(e => [e.type, e.amount].filter(Boolean).join(' ')).join(' | ')}`)

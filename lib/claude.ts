@@ -146,3 +146,61 @@ export async function generateMessage(
 
   return response.content[0].type === 'text' ? response.content[0].text.trim() : template
 }
+
+// ── AGENTE 04 — Script para vídeo HeyGen ──────────────────
+
+// Limite de palavras para vídeos de até 30 segundos
+// Ritmo médio de fala: ~130 palavras/min → 30s = ~65 palavras
+const MAX_SCRIPT_WORDS = 65
+
+export async function generateVideoScript(
+  lead: { nome_contato?: string; vertical_bluedocs?: string; dor_primaria?: string },
+  company: { nome: string; uf?: string; setor?: string }
+): Promise<string> {
+  const contato = lead.nome_contato
+    ? lead.nome_contato.split(' ')[0]
+    : 'pessoal'
+
+  const prompt = `Você é uma SDR da BlueMetrics gravando um vídeo de prospecção.
+O vídeo precisa ter EXATAMENTE até 30 segundos quando falado em ritmo natural.
+Isso significa NO MÁXIMO ${MAX_SCRIPT_WORDS} palavras.
+
+Tom: informal, direto, humano. Sem palavras corporativas.
+
+Dados do lead:
+- Empresa: ${company.nome}
+- Estado: ${company.uf || 'Brasil'}
+- Setor: ${company.setor || lead.vertical_bluedocs || ''}
+- Nome do contato: ${contato}
+- Dor identificada: ${lead.dor_primaria || 'processos documentais manuais'}
+
+Regras obrigatórias:
+1. Começa com "Oi ${contato},"
+2. Menciona "${company.nome}" na primeira frase
+3. Cita a dor de forma específica — nunca genérica
+4. Termina propondo "15 minutos de conversa"
+5. MÁXIMO ${MAX_SCRIPT_WORDS} palavras — conte antes de responder
+6. Apenas texto corrido — sem listas, sem markdown, sem emojis
+
+Retorne APENAS o script. Nenhuma palavra adicional.`
+
+  const response = await client.messages.create({
+    model: MODEL,
+    max_tokens: 250,
+    messages: [{ role: 'user', content: prompt }],
+  })
+
+  const script = response.content[0].type === 'text'
+    ? response.content[0].text.trim()
+    : `Oi ${contato}, tudo bem? Vi que a ${company.nome} pode se beneficiar do BlueDocs. Posso mostrar em 15 minutos?`
+
+  const words = script.split(' ')
+  if (words.length > MAX_SCRIPT_WORDS) {
+    console.warn(`  ⚠ Script com ${words.length} palavras — truncando para ${MAX_SCRIPT_WORDS}`)
+    const truncated = words.slice(0, MAX_SCRIPT_WORDS).join(' ')
+    const lastDot = truncated.lastIndexOf('.')
+    return lastDot > 0 ? truncated.substring(0, lastDot + 1) : truncated
+  }
+
+  return script
+}

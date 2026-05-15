@@ -501,7 +501,7 @@ export async function runAgent(options: { limit?: number; leadIds?: string[] } =
   let query = supabase
     .from('leads')
     .select('*, companies(*)')
-    .eq('status', 'enriched')
+    .in('status', ['enriched', 'needs_phone_reveal'])
 
   if (options.leadIds && options.leadIds.length > 0) {
     query = query.in('id', options.leadIds)
@@ -515,7 +515,7 @@ export async function runAgent(options: { limit?: number; leadIds?: string[] } =
   }
 
   if (!leads || leads.length === 0) {
-    console.log('[Agente 02] Nenhum lead com status "enriched" encontrado.')
+    console.log('[Agente 02] Nenhum lead com status "enriched" ou "needs_phone_reveal" encontrado.')
     return
   }
 

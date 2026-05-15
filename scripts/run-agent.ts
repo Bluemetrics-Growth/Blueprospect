@@ -2,6 +2,7 @@
 //   npx ts-node scripts/run-agent.ts 1 [--limit N] [--file path.json]
 //   npx ts-node scripts/run-agent.ts 2 [--limit N]
 //   npx ts-node scripts/run-agent.ts 3 [--limit N]
+//   npx ts-node scripts/run-agent.ts 4 [--limit N]
 //   npx ts-node scripts/run-agent.ts 0 --mode aws_list   [--scores A+,A] [--setores Healthcare,Financial] [--ufs CE,BA] [--produto bluedocs] [--limit N]
 //   npx ts-node scripts/run-agent.ts 0 --mode apollo_search --setores Healthcare --ufs SP,RJ --produto bluedocs [--limit 25]
 //   npx ts-node scripts/run-agent.ts 0 --mode csv_upload --file data/leads.csv --produto bluedocs
@@ -12,6 +13,7 @@ import { captureLeads, type AWSFilters, type ApolloFilters, type CSVUploadOption
 import { runAgent as runAgent1 } from '../agents/agent-01-enrichment'
 import { runAgent as runAgent2 } from '../agents/agent-02-hubspot'
 import { runAgent as runAgent3 } from '../agents/agent-03-whatsapp'
+import { runAgent as runAgent4 } from '../agents/agent-04-video'
 
 // ─── CLI arg helpers ──────────────────────────────────────────────────────────
 
@@ -112,8 +114,9 @@ console.log()
   if (agentNum === 1) return runAgent1(opts1)
   if (agentNum === 2) return runAgent2({ limit })
   if (agentNum === 3) return runAgent3({ limit })
+  if (agentNum === 4) return runAgent4({ limit })
 
-  console.error(`Agente inválido: ${agentNum}. Use 0, 1, 2 ou 3.`)
+  console.error(`Agente inválido: ${agentNum}. Use 0, 1, 2, 3 ou 4.`)
   process.exit(1)
 })().catch(err => {
   console.error('Erro fatal:', err)
