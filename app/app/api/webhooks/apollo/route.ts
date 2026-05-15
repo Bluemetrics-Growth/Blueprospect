@@ -100,8 +100,7 @@ async function updateLeadPhone(
   const supabase = getSupabase()
   const { data: leads, error } = await supabase
     .from('leads')
-    .select('id, hubspot_contact_id')
-    .eq('status', 'needs_phone_reveal')
+    .select('id, status, hubspot_contact_id')
     .filter('dados_apollo->>person_id', 'eq', personId)
 
   if (error) {
@@ -110,14 +109,17 @@ async function updateLeadPhone(
   }
 
   if (!leads || leads.length === 0) {
-    console.warn(`[Webhook Apollo] Nenhum lead needs_phone_reveal para person_id: ${personId}`)
+    console.warn(`[Webhook Apollo] Nenhum lead encontrado para person_id: ${personId}`)
     return null
   }
 
   const lead = leads[0]
+  const update: Record<string, string> = { whatsapp: phone }
+  if (lead.status === 'needs_phone_reveal') update.status = 'enriched'
+
   const { error: updateError } = await supabase
     .from('leads')
-    .update({ whatsapp: phone, status: 'enriched' })
+    .update(update)
     .eq('id', lead.id)
 
   if (updateError) {
